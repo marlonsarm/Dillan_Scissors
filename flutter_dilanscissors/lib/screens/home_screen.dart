@@ -193,7 +193,7 @@ class _HomeScreenState extends State<HomeScreen>
   final List<Map<String, String>> portafolio = [
    {
       'url': 'https://res.cloudinary.com/sla80nsi/image/upload/v1783654278/logo_whjwun.jpg',
-      'tag': 'Fade cláhttpssico',
+      'tag': 'Dilan Scissors',
       'categoria': 'Fades',
       'foto2': 'https://res.cloudinary.com/sla80nsi/image/upload/v1783627411/d7_udpfkf.jpg',
       'foto3': 'https://res.cloudinary.com/sla80nsi/image/upload/v1783627411/d8_r5rn37.jpg',
@@ -1812,6 +1812,7 @@ class _ServiceCard extends StatelessWidget {
         ? imagenBackend
         : (imagenes.isNotEmpty ? imagenes[0] : null);
     final tieneImagen = imagenPrincipal != null && !imagenPrincipal.startsWith('PEGA_AQUI');
+    final precioFormateado = _formatearPrecio(precio);
 
     return Container(
       decoration: BoxDecoration(
@@ -1865,7 +1866,7 @@ class _ServiceCard extends StatelessWidget {
                     border: Border.all(color: paleta.gold.withOpacity(0.6)),
                   ),
                   child: Text(
-                    '\$$precio',
+                    precioFormateado,
                     style: TextStyle(
                       color: paleta.goldLight,
                       fontSize: 12.5,
@@ -1938,12 +1939,27 @@ class _ServiceCard extends StatelessWidget {
     );
   }
 
- Widget _fallbackIcono() {
+Widget _fallbackIcono() {
   return Container(
       color: paleta.gold.withOpacity(0.12),
       alignment: Alignment.center,
       child: Icon(Icons.content_cut, color: paleta.gold, size: 32),
     );
+  }
+
+  static String _formatearPrecio(String precioRaw) {
+    final numero = double.tryParse(precioRaw) ?? 0;
+    final entero = numero.round();
+    final texto = entero.toString();
+    final buffer = StringBuffer();
+    for (int i = 0; i < texto.length; i++) {
+      final posicionDesdeFinal = texto.length - i;
+      buffer.write(texto[i]);
+      if (posicionDesdeFinal > 1 && posicionDesdeFinal % 3 == 1) {
+        buffer.write(".");
+      }
+    }
+    return "\$${buffer.toString()}";
   }
 }
 
@@ -2425,19 +2441,14 @@ class _SelloLightboxState extends State<_SelloLightbox>
                   childAspectRatio: 1,
                   children: _miniaturas.map(_miniatura).toList(),
                 ),
-                const SizedBox(height: 16),
-                ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    widget.onReservar?.call(widget.item['tag']!, widget.item['url']!);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: widget.paleta.gold,
-                    foregroundColor: Colors.black,
-                    padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
-                  ),
-                  icon: const Icon(Icons.calendar_month, size: 18),
-                  label: const Text('Reservar este corte'),
+                GridView.count(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  crossAxisCount: 3,
+                  mainAxisSpacing: 10,
+                  crossAxisSpacing: 10,
+                  childAspectRatio: 1,
+                  children: _miniaturas.map(_miniatura).toList(),
                 ),
               ],
             ),
@@ -2447,3 +2458,4 @@ class _SelloLightboxState extends State<_SelloLightbox>
     );
   }
 }
+              

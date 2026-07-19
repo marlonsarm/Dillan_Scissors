@@ -78,7 +78,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
  // ---- Datos de Cloudinary (unsigned upload) ----
   static const String _cloudName = 'sla80nsi';
-  static const String _uploadPreset = 'perfil_usuarios';
+ static const String _uploadPreset = 'dilanscissors_preset';
 
   // ---- Marca de agua de fondo (misma foto del barbero que usa el Home) ----
   static const String _logoMarcaAgua =
