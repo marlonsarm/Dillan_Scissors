@@ -301,6 +301,39 @@ String get _baseUrlDinamica {
     await storage.write(key: "cortes_completados", value: cortesCompletados.toString());
   }
 
+  // ---------- HISTORIAL LOCAL PARA AUTOCOMPLETAR EN EL LOGIN ----------
+  Future<List<String>> _leerHistorial(String key) async {
+    final valor = await storage.read(key: key);
+    if (valor == null || valor.isEmpty) return [];
+    try {
+      return List<String>.from(jsonDecode(valor));
+    } catch (_) {
+      return [];
+    }
+  }
+
+  Future<void> _guardarEnHistorial(String key, String valor) async {
+    if (valor.trim().isEmpty) return;
+    final lista = await _leerHistorial(key);
+    lista.remove(valor);
+    lista.insert(0, valor);
+    if (lista.length > 5) {
+      lista.removeRange(5, lista.length);
+    }
+    await storage.write(key: key, value: jsonEncode(lista));
+  }
+
+  Future<List<String>> getHistorialCorreosCliente() => _leerHistorial("historial_correos_cliente");
+  Future<List<String>> getHistorialTelefonosCliente() => _leerHistorial("historial_telefonos_cliente");
+  Future<List<String>> getHistorialCorreosBarbero() => _leerHistorial("historial_correos_barbero");
+
+  Future<void> guardarCorreoClienteHistorial(String email) =>
+      _guardarEnHistorial("historial_correos_cliente", email);
+  Future<void> guardarTelefonoClienteHistorial(String telefono) =>
+      _guardarEnHistorial("historial_telefonos_cliente", telefono);
+  Future<void> guardarCorreoBarberoHistorial(String email) =>
+      _guardarEnHistorial("historial_correos_barbero", email);
+
  // ---------- CANCELAR RESERVA (con motivo, visible para el admin) ----------
   Future<Map<String, dynamic>> cancelarReserva({
     required int reservaId,

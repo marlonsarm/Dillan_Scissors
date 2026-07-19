@@ -5,6 +5,7 @@ from flask_jwt_extended import JWTManager, create_access_token, jwt_required, ge
 from functools import wraps
 import mysql.connector
 import os
+import threading
 import smtplib
 from email.mime.text import MIMEText
 from datetime import datetime, timedelta
@@ -142,7 +143,11 @@ def procesar_reservas_pendientes(cursor, conn):
     pendientes_por_notificar = cursor.fetchall()
 
     for reserva in pendientes_por_notificar:
-        enviar_correo_recordatorio(reserva)
+        threading.Thread(
+            target=enviar_correo_recordatorio,
+            args=(reserva,),
+            daemon=True
+        ).start()
         cursor.execute(
             "UPDATE reservas SET notificado_recordatorio = TRUE WHERE id = %s",
             (reserva["id"],)
@@ -418,7 +423,11 @@ def crear_reserva():
         detalle_reserva["hora_inicio"] = str(detalle_reserva["hora_inicio"])
         detalle_reserva["hora_fin"] = str(detalle_reserva["hora_fin"])
         total_precio += float(detalle_reserva["precio"])
-        enviar_correo_confirmacion_cliente(detalle_reserva)
+        threading.Thread(
+            target=enviar_correo_confirmacion_cliente,
+            args=(detalle_reserva,),
+            daemon=True
+        ).start()
 
     for extra in adicionales_detalle:
         extra["precio"] = float(extra["precio"])

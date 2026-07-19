@@ -27,10 +27,33 @@ class _LoginScreenState extends State<LoginScreen> {
   final _telefonoController = TextEditingController();
   final _authService = AuthService();
 
-  bool _isLoading = false;
+ bool _isLoading = false;
   bool _obscure = true;
   bool _esCliente = true;
   String? _errorMessage;
+
+  List<String> _historialCorreos = [];
+  List<String> _historialTelefonos = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _cargarHistorial();
+  }
+
+  Future<void> _cargarHistorial() async {
+    final correos = _esCliente
+        ? await _authService.getHistorialCorreosCliente()
+        : await _authService.getHistorialCorreosBarbero();
+    final telefonos = _esCliente
+        ? await _authService.getHistorialTelefonosCliente()
+        : <String>[];
+    if (!mounted) return;
+    setState(() {
+      _historialCorreos = correos;
+      _historialTelefonos = telefonos;
+    });
+  }
 
   Future<void> _handleLogin() async {
     setState(() {
@@ -51,6 +74,12 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = false);
 
     if (resultado["success"] == true) {
+      if (_esCliente) {
+        await _authService.guardarCorreoClienteHistorial(_emailController.text.trim());
+        await _authService.guardarTelefonoClienteHistorial(_telefonoController.text.trim());
+      } else {
+        await _authService.guardarCorreoBarberoHistorial(_emailController.text.trim());
+      }
       if (!mounted) return;
       final rol = resultado["data"]["usuario"]["rol"];
       Navigator.pushReplacement(
@@ -171,7 +200,10 @@ class _LoginScreenState extends State<LoginScreen> {
                             children: [
                               Expanded(
                                 child: GestureDetector(
-                                  onTap: () => setState(() => _esCliente = true),
+                                  onTap: () {
+                                    setState(() => _esCliente = true);
+                                    _cargarHistorial();
+                                  },
                                   child: Container(
                                     padding: const EdgeInsets.symmetric(vertical: 10),
                                     decoration: BoxDecoration(
@@ -192,7 +224,10 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                               Expanded(
                                 child: GestureDetector(
-                                  onTap: () => setState(() => _esCliente = false),
+                                onTap: () {
+                                    setState(() => _esCliente = false);
+                                    _cargarHistorial();
+                                  },
                                   child: Container(
                                     padding: const EdgeInsets.symmetric(vertical: 10),
                                     decoration: BoxDecoration(
@@ -215,19 +250,117 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                         const SizedBox(height: 14),
-                        TextField(
-                          controller: _emailController,
-                          keyboardType: TextInputType.emailAddress,
-                          style: const TextStyle(color: AppColorsLogin.textPrimary, fontSize: 14),
-                          decoration: _decoration("Correo electrónico", Icons.email_outlined),
+                        Autocomplete<String>(
+                          optionsBuilder: (TextEditingValue textEditingValue) {
+                            if (textEditingValue.text.length < 3) {
+                              return const Iterable<String>.empty();
+                            }
+                            return _historialCorreos.where((opcion) => opcion
+                                .toLowerCase()
+                                .contains(textEditingValue.text.toLowerCase()));
+                          },
+                          onSelected: (String seleccion) {
+                            _emailController.text = seleccion;
+                          },
+                          optionsViewBuilder: (context, onSelected, options) {
+                            return Align(
+                              alignment: Alignment.topLeft,
+                              child: Material(
+                                color: AppColorsLogin.surface,
+                                borderRadius: BorderRadius.circular(10),
+                                elevation: 6,
+                                child: ConstrainedBox(
+                                  constraints: const BoxConstraints(maxHeight: 160, maxWidth: 304),
+                                  child: ListView.builder(
+                                    padding: EdgeInsets.zero,
+                                    shrinkWrap: true,
+                                    itemCount: options.length,
+                                    itemBuilder: (context, index) {
+                                      final opcion = options.elementAt(index);
+                                      return ListTile(
+                                        dense: true,
+                                        title: Text(
+                                          opcion,
+                                          style: const TextStyle(color: AppColorsLogin.textPrimary, fontSize: 13),
+                                        ),
+                                        onTap: () => onSelected(opcion),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                          fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
+                            controller.text = _emailController.text;
+                            controller.addListener(() {
+                              _emailController.text = controller.text;
+                            });
+                            return TextField(
+                              controller: controller,
+                              focusNode: focusNode,
+                              keyboardType: TextInputType.emailAddress,
+                              style: const TextStyle(color: AppColorsLogin.textPrimary, fontSize: 14),
+                              decoration: _decoration("Correo electrónico", Icons.email_outlined),
+                            );
+                          },
                         ),
                        const SizedBox(height: 14),
-                        if (_esCliente)
-                          TextField(
-                            controller: _telefonoController,
-                            keyboardType: TextInputType.phone,
-                            style: const TextStyle(color: AppColorsLogin.textPrimary, fontSize: 14),
-                            decoration: _decoration("Número de teléfono", Icons.phone_outlined),
+                      if (_esCliente)
+                          Autocomplete<String>(
+                            optionsBuilder: (TextEditingValue textEditingValue) {
+                              if (textEditingValue.text.length < 3) {
+                                return const Iterable<String>.empty();
+                              }
+                              return _historialTelefonos.where((opcion) => opcion
+                                  .toLowerCase()
+                                  .contains(textEditingValue.text.toLowerCase()));
+                            },
+                            onSelected: (String seleccion) {
+                              _telefonoController.text = seleccion;
+                            },
+                            optionsViewBuilder: (context, onSelected, options) {
+                              return Align(
+                                alignment: Alignment.topLeft,
+                                child: Material(
+                                  color: AppColorsLogin.surface,
+                                  borderRadius: BorderRadius.circular(10),
+                                  elevation: 6,
+                                  child: ConstrainedBox(
+                                    constraints: const BoxConstraints(maxHeight: 160, maxWidth: 304),
+                                    child: ListView.builder(
+                                      padding: EdgeInsets.zero,
+                                      shrinkWrap: true,
+                                      itemCount: options.length,
+                                      itemBuilder: (context, index) {
+                                        final opcion = options.elementAt(index);
+                                        return ListTile(
+                                          dense: true,
+                                          title: Text(
+                                            opcion,
+                                            style: const TextStyle(color: AppColorsLogin.textPrimary, fontSize: 13),
+                                          ),
+                                          onTap: () => onSelected(opcion),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                            fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
+                              controller.text = _telefonoController.text;
+                              controller.addListener(() {
+                                _telefonoController.text = controller.text;
+                              });
+                              return TextField(
+                                controller: controller,
+                                focusNode: focusNode,
+                                keyboardType: TextInputType.phone,
+                                style: const TextStyle(color: AppColorsLogin.textPrimary, fontSize: 14),
+                                decoration: _decoration("Número de teléfono", Icons.phone_outlined),
+                              );
+                            },
                           )
                         else
                           TextField(
