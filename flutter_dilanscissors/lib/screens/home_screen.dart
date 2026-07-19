@@ -59,7 +59,7 @@ const _paletaNormal = _Paleta(
   gold: Color(0xFFB08D45),
   goldLight: Color(0xFFD4AF37),
   textPrimary: Color(0xFFF5F0E6),
-  textSecondary: Color(0xFFA79C8A),
+  textSecondary: Color.fromARGB(255, 46, 38, 25),
   divider: Color(0xFF332E24),
   goldenBadge: Color(0xFFD4AF37),
   headerGradient: [Color(0xFF0C0B09), Color(0xFF1C1913)],

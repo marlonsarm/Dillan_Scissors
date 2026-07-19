@@ -2454,6 +2454,10 @@ Future<void> _abrirFormularioJornada() async {
       return "$hora12:${t.minute.toString().padLeft(2, '0')} $periodo";
     }
 
+    String horaParaApi(TimeOfDay t) {
+      return "${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}";
+    }
+
     String diaAsString(DateTime d) =>
         "${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}";
 
@@ -2684,11 +2688,11 @@ Future<void> _abrirFormularioJornada() async {
 
                       final resultado = await _guardarJornada(
                                   dia: dia,
-                                  horaApertura: formatearHora(apertura),
-                                  horaCierre: formatearHora(cierre),
+                                  horaApertura: horaParaApi(apertura),
+                                  horaCierre: horaParaApi(cierre),
                                   almuerzoInicio:
-                                      tieneAlmuerzo ? formatearHora(almuerzoInicio) : null,
-                                  almuerzoFin: tieneAlmuerzo ? formatearHora(almuerzoFin) : null,
+                                      tieneAlmuerzo ? horaParaApi(almuerzoInicio) : null,
+                                  almuerzoFin: tieneAlmuerzo ? horaParaApi(almuerzoFin) : null,
                                 );
 
                                 if (!mounted) return;
