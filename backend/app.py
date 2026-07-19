@@ -1440,7 +1440,7 @@ def admin_definir_jornada():
         "SELECT hora FROM horarios_disponibles WHERE dia = %s",
         (fecha_dia,)
     )
-    horas_existentes = {str(fila[0]) for fila in cursor.fetchall()}
+    horas_existentes = {str(fila["hora"]) for fila in cursor.fetchall()}
 
     hora_apertura_dt = datetime.strptime(hora_apertura, "%H:%M")
     hora_cierre_dt = datetime.strptime(hora_cierre, "%H:%M")
