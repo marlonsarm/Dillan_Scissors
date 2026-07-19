@@ -1782,8 +1782,8 @@ def disponibilidad():
 
     ocupados_dt.sort(key=lambda x: x[0])
 
- # 6. Si es hoy, no permitir horas que ya pasaron (+ margen configurado por el barbero)
-    ahora = datetime.now()
+# 6. Si es hoy, no permitir horas que ya pasaron (+ margen configurado por el barbero)
+    ahora = datetime.now(ZONA_HORARIA).replace(tzinfo=None)
     inicio_minimo = apertura
     if base.date() == ahora.date():
         margen = ahora + timedelta(minutes=minutos_anticipacion_min)
