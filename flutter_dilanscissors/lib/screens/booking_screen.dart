@@ -120,7 +120,7 @@ class _BookingScreenState extends State<BookingScreen> {
 
   Future<void> _cargarServicios() async {
     try {
-      final response = await http.get(Uri.parse('http://127.0.0.1:8080/obtener_servicios'));
+      final response = await http.get(Uri.parse('https://dillanscissors-production.up.railway.app/obtener_servicios'));
       if (response.statusCode == 200) {
         setState(() {
           servicios = jsonDecode(response.body);
@@ -137,7 +137,7 @@ class _BookingScreenState extends State<BookingScreen> {
 
   Future<void> _cargarDiasDisponibles() async {
     try {
-      final response = await http.get(Uri.parse('http://127.0.0.1:8080/dias_disponibles'));
+      final response = await http.get(Uri.parse('https://dillanscissors-production.up.railway.app/dias_disponibles'));
       if (response.statusCode == 200) {
         setState(() {
           diasDisponibles = List<Map<String, dynamic>>.from(jsonDecode(response.body));
@@ -160,7 +160,7 @@ class _BookingScreenState extends State<BookingScreen> {
     try {
       final adicionalesIds = serviciosAdicionales.map((s) => s['id']).join(',');
       final uri = Uri.parse(
-        'http://127.0.0.1:8080/disponibilidad?dia=$dia&servicio_id=${servicioSeleccionado!['id']}&adicionales=$adicionalesIds',
+        'https://dillanscissors-production.up.railway.app/disponibilidad?dia=$dia&servicio_id=${servicioSeleccionado!['id']}&adicionales=$adicionalesIds',
       );
       final response = await http.get(uri);
       if (response.statusCode == 200) {
@@ -204,7 +204,7 @@ class _BookingScreenState extends State<BookingScreen> {
 
     try {
       final response = await http.post(
-        Uri.parse('http://127.0.0.1:8080/crear_reserva'),
+        Uri.parse('https://dillanscissors-production.up.railway.app/crear_reserva'),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
           "usuario_id": int.parse(usuarioId ?? "0"),

@@ -31,7 +31,7 @@ class AdminScreen extends StatefulWidget {
 class _AdminScreenState extends State<AdminScreen>
     with SingleTickerProviderStateMixin {
   // ⚠️ Misma URL base que usa auth_service.dart
- static const String baseUrl = "http://127.0.0.1:8080";
+ static const String baseUrl = "https://dillanscissors-production.up.railway.app";
   final storage = const FlutterSecureStorage();
   final _authService = AuthService();
 
@@ -2448,8 +2448,11 @@ Future<void> _abrirFormularioJornada() async {
     bool esEdicionExistente = false;
     String? error;
 
-    String formatearHora(TimeOfDay t) =>
-        "${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}";
+ String formatearHora(TimeOfDay t) {
+      final hora12 = t.hourOfPeriod == 0 ? 12 : t.hourOfPeriod;
+      final periodo = t.period == DayPeriod.am ? "AM" : "PM";
+      return "$hora12:${t.minute.toString().padLeft(2, '0')} $periodo";
+    }
 
     String diaAsString(DateTime d) =>
         "${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}";

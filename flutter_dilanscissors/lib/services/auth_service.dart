@@ -12,13 +12,7 @@ class AuthService {
 
 // Detecta automáticamente la URL correcta según dónde corra la app
 String get _baseUrlDinamica {
-  if (kIsWeb) {
-    return "http://127.0.0.1:8080"; // Chrome / navegador
- } else if (Platform.isAndroid) {
-    return "http://127.0.0.1:8080"; // Producción
-  } else {
-    return "http://127.0.0.1:8080"; // iOS simulator / escritorio
-  }
+  return "https://dillanscissors-production.up.railway.app";
 }
 
   String get baseUrl => _baseUrlDinamica;

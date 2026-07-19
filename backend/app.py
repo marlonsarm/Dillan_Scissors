@@ -1410,6 +1410,7 @@ def admin_definir_jornada():
             almuerzo_inicio and almuerzo_fin and
             hora_inicio_r < almuerzo_fin and hora_fin_r > almuerzo_inicio
         )
+
         if fuera_de_jornada or choca_almuerzo:
             reservas_afectadas.append({
                 "id": r["id"],
@@ -1430,14 +1431,55 @@ def admin_definir_jornada():
         hora_apertura, hora_cierre, almuerzo_inicio, almuerzo_fin
     ))
     conn.commit()
+
+    # --- Generar automáticamente los horarios reservables de ese día ---
+    duracion_slot = data.get("duracion_minutos", 30)
+    fecha_dia = datetime.strptime(dia, "%Y-%m-%d").date()
+
+    cursor.execute(
+        "SELECT hora FROM horarios_disponibles WHERE dia = %s",
+        (fecha_dia,)
+    )
+    horas_existentes = {str(fila[0]) for fila in cursor.fetchall()}
+
+    hora_apertura_dt = datetime.strptime(hora_apertura, "%H:%M")
+    hora_cierre_dt = datetime.strptime(hora_cierre, "%H:%M")
+    almuerzo_inicio_dt = datetime.strptime(almuerzo_inicio, "%H:%M") if almuerzo_inicio else None
+    almuerzo_fin_dt = datetime.strptime(almuerzo_fin, "%H:%M") if almuerzo_fin else None
+
+    nuevos_horarios = []
+    hora_actual = hora_apertura_dt
+    while hora_actual < hora_cierre_dt:
+        dentro_del_almuerzo = (
+            almuerzo_inicio_dt and almuerzo_fin_dt and
+            almuerzo_inicio_dt <= hora_actual < almuerzo_fin_dt
+        )
+        clave = str(hora_actual.time())
+        if not dentro_del_almuerzo and clave not in horas_existentes:
+            nuevos_horarios.append((fecha_dia, hora_actual.time()))
+        hora_actual += timedelta(minutes=duracion_slot)
+
+    if nuevos_horarios:
+        cursor.executemany(
+            "INSERT INTO horarios_disponibles (dia, hora, disponible) VALUES (%s, %s, TRUE)",
+            nuevos_horarios
+        )
+        conn.commit()
+    else:
+        cursor.execute(
+            "UPDATE horarios_disponibles SET disponible = TRUE WHERE dia = %s",
+            (fecha_dia,)
+        )
+        conn.commit()
+
     cursor.close()
     conn.close()
 
     return jsonify({
         "mensaje": "Jornada guardada correctamente",
-        "reservas_afectadas": reservas_afectadas
+        "reservas_afectadas": reservas_afectadas,
+        "horarios_generados": len(nuevos_horarios)
     }), 201
-
 
 # ---------- ADMIN: CERRAR UN DÍA ----------
 @app.route("/admin/jornada/cerrar", methods=["POST"])
@@ -1632,11 +1674,10 @@ def dias_disponibles():
 
     return jsonify(resultados), 200
 
-
 # ---------- CLIENTE: DISPONIBILIDAD DE HORAS (cálculo dinámico) ----------
 @app.route("/disponibilidad", methods=["GET"])
 def disponibilidad():
-    from datetime import datetime, timedelta, date as ddate
+    from datetime import datetime, timedelta, date as ddate, time as dtime
 
     dia_str = request.args.get("dia")
     servicio_id = request.args.get("servicio_id")
@@ -1653,10 +1694,8 @@ def disponibilidad():
     procesar_reservas_pendientes(cursor, conn)
 
     # 0. Configuración del barbero (buffer y anticipación mínima)
-    cursor.execute("SELECT buffer_minutos, minutos_anticipacion_min FROM config_barbero WHERE id = 1")
-    config = cursor.fetchone() or {}
-    buffer_minutos = config.get("buffer_minutos", 0)
-    minutos_anticipacion_min = config.get("minutos_anticipacion_min", 0)
+    buffer_minutos = 0
+    minutos_anticipacion_min = 15
 
     # 1. Jornada laboral del día: primero excepción puntual, si no hay, plantilla semanal
     cursor.execute(
@@ -1684,13 +1723,15 @@ def disponibilidad():
             (dia_semana,)
         )
         plantilla = cursor.fetchone()
-        if not plantilla:
-            cursor.close()
-            conn.close()
-            return jsonify([]), 200
-        jornada = {"hora_apertura": plantilla["hora_apertura"], "hora_cierre": plantilla["hora_cierre"]}
-        descanso_inicio = plantilla["descanso_inicio"]
-        descanso_fin = plantilla["descanso_fin"]
+        if plantilla:
+            jornada = {"hora_apertura": plantilla["hora_apertura"], "hora_cierre": plantilla["hora_cierre"]}
+            descanso_inicio = plantilla["descanso_inicio"]
+            descanso_fin = plantilla["descanso_fin"]
+        else:
+            # Por defecto: si nadie configuró nada, se atiende de 9 AM a 9 PM
+            jornada = {"hora_apertura": dtime(9, 0), "hora_cierre": dtime(21, 0)}
+            descanso_inicio = None
+            descanso_fin = None
 
     # 2. Duración total del servicio + adicionales
     duracion_total = 0
@@ -1772,6 +1813,33 @@ def disponibilidad():
                 disponibles.append(cursor_time.strftime("%H:%M"))
 
     return jsonify(disponibles), 200
+
+
+# ---------- TEMPORAL: VER Y CORREGIR CONFIGURACIÓN (borrar después de usar) ----------
+@app.route("/admin/config_check", methods=["GET"])
+def admin_config_check():
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM config_barbero WHERE id = 1")
+    config = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    return jsonify(config), 200
+
+
+@app.route("/admin/config_fix", methods=["GET"])
+def admin_config_fix():
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        UPDATE config_barbero
+        SET minutos_anticipacion_min = 30
+        WHERE id = 1
+    """)
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return jsonify({"mensaje": "Corregido: minutos_anticipacion_min ahora es 30"}), 200
 
 
 if __name__ == "__main__":

@@ -482,7 +482,7 @@ class _HomeScreenState extends State<HomeScreen>
   Future<void> obtenerServicios() async {
     try {
       final response = await http.get(
-        Uri.parse('http://127.0.0.1:8080/obtener_servicios'),
+        Uri.parse('https://dillanscissors-production.up.railway.app/obtener_servicios'),
       );
       if (response.statusCode == 200) {
         setState(() {
@@ -1383,14 +1383,8 @@ class _HomeScreenState extends State<HomeScreen>
       child: Stack(
         fit: StackFit.expand,
         children: [
-          // ---- Collage de 3 fotos full-bleed, estilo Mustache's ----
-         Row(
-            children: [
-              Expanded(flex: 3, child: fotoCollage(_fotoAmbiente, tieneFotoAmbiente, Icons.storefront_outlined)),
-              Expanded(flex: 4, child: fotoCollage(_fotoBarbero, tieneFotoBarbero, Icons.person)),
-              Expanded(flex: 3, child: fotoCollage(_fotoCorteProceso, tieneFotoCorte, Icons.content_cut)),
-            ],
-          ),
+          // ---- Foto principal del barbero, centrada ----
+          fotoCollage(_fotoBarbero, tieneFotoBarbero, Icons.person),
           if (esGolden) corner(top: true, left: true),
           if (esGolden) corner(top: true, left: false),
           if (esGolden) corner(top: false, left: true),
