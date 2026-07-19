@@ -1,0 +1,3 @@
+[build]
+  command = "git clone https://github.com/flutter/flutter.git --depth 1 -b stable _flutter && export PATH=$PATH:$PWD/_flutter/bin && flutter doctor && flutter build web --release"
+  publish = "build/web"
