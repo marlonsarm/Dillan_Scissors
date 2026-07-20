@@ -83,7 +83,7 @@ class _GalleryScreenState extends State<GalleryScreen> {
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 4, 20, 16),
             child: Text(
-              'Un vistazo a la barbería, más allá de los cortes.',
+              'Un vistazo al barbero, más allá de los cortes.',
               style: TextStyle(color: _GalColors.textSecondary, fontSize: 13),
             ),
           ),

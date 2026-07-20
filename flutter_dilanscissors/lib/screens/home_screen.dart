@@ -59,7 +59,7 @@ const _paletaNormal = _Paleta(
   gold: Color(0xFFB08D45),
   goldLight: Color(0xFFD4AF37),
   textPrimary: Color(0xFFF5F0E6),
-  textSecondary: Color.fromARGB(255, 46, 38, 25),
+  textSecondary: Color(0xFFA79C8A),
   divider: Color(0xFF332E24),
   goldenBadge: Color(0xFFD4AF37),
   headerGradient: [Color(0xFF0C0B09), Color(0xFF1C1913)],
@@ -348,11 +348,6 @@ class _HomeScreenState extends State<HomeScreen>
     },
     {
       'url': 'https://res.cloudinary.com/sla80nsi/image/upload/v1783630333/t10_m02irn.jpg',
-      'tag': 'Corte 2',
-      'categoria': 'Diseños',
-    },
-    {
-      'url': 'https://res.cloudinary.com/sla80nsi/image/upload/v1783630334/t9_uqfsvp.jpg',
       'tag': 'Corte 2',
       'categoria': 'Diseños',
     },
@@ -2432,16 +2427,7 @@ class _SelloLightboxState extends State<_SelloLightbox>
                   ),
                 ),
                 const SizedBox(height: 14),
-                GridView.count(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  crossAxisCount: 3,
-                  mainAxisSpacing: 10,
-                  crossAxisSpacing: 10,
-                  childAspectRatio: 1,
-                  children: _miniaturas.map(_miniatura).toList(),
-                ),
-                GridView.count(
+              GridView.count(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   crossAxisCount: 3,
