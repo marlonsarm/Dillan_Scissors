@@ -16,6 +16,18 @@ load_dotenv()
 
 ZONA_HORARIA = ZoneInfo("America/Bogota")
 
+DIAS_SEMANA_ES = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"]
+MESES_ES = ["enero", "febrero", "marzo", "abril", "mayo", "junio",
+            "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"]
+
+def formatear_fecha_hora_notif(dia_str, hora_str):
+    fecha = datetime.strptime(dia_str, "%Y-%m-%d")
+    hora = datetime.strptime(hora_str, "%H:%M")
+    dia_semana = DIAS_SEMANA_ES[fecha.weekday()]
+    mes = MESES_ES[fecha.month - 1]
+    hora12 = hora.strftime("%I:%M%p").lstrip("0").lower()
+    return f"{dia_semana} {fecha.day} de {mes} de {fecha.year} a las {hora12}"
+
 app = Flask(__name__)
 CORS(app)
 bcrypt = Bcrypt(app)
@@ -267,43 +279,6 @@ def login_cliente():
             "foto_url": usuario.get("foto_url")
         }
     }), 200
-
-
-# ---------- LOGIN BARBERO/ADMIN (correo + contraseña) ----------
-@app.route("/login/barbero", methods=["POST"])
-def login_barbero():
-    data = request.get_json()
-    email = data.get("email")
-    password = data.get("password")
-
-    if not email or not password:
-        return jsonify({"error": "Correo y contraseña son obligatorios"}), 400
-
-    conn = get_connection()
-    cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM usuarios WHERE email = %s AND rol = 'admin'", (email,))
-    usuario = cursor.fetchone()
-    cursor.close()
-    conn.close()
-
-    if not usuario or not usuario["password"] or not bcrypt.check_password_hash(usuario["password"], password):
-        return jsonify({"error": "Email o contraseña incorrectos"}), 401
-
-    token = create_access_token(identity=str(usuario["id"]), additional_claims={"rol": usuario["rol"]})
-
-    return jsonify({
-        "mensaje": "Login exitoso",
-        "token": token,
-        "usuario": {
-            "id": usuario["id"],
-            "nombre": usuario["nombre"],
-            "email": usuario["email"],
-            "rol": usuario["rol"],
-            "es_golden_member": bool(usuario["es_golden_member"]),
-            "cortes_completados": usuario["cortes_completados"],
-            "foto_url": usuario.get("foto_url")
-        }
-    }), 200
 # ---------- CREAR RESERVA ----------
 @app.route("/crear_reserva", methods=["POST"])
 def crear_reserva():
@@ -323,6 +298,7 @@ def crear_reserva():
 
     conn = get_connection()
     cursor = conn.cursor(dictionary=True)
+
     try:
         conn.start_transaction()
 
@@ -405,7 +381,8 @@ def crear_reserva():
         """, (nueva_id,))
         adicionales_detalle = cursor.fetchall()
 
-        mensaje_notif = f"Nueva reserva: {detalle_reserva['cliente_nombre']} ({detalle_reserva['cliente_telefono']}) - {detalle_reserva['servicio_nombre']} el {dia} a las {hora_inicio_str}"
+        fecha_hora_legible = formatear_fecha_hora_notif(dia, hora_inicio_str)
+        mensaje_notif = f"Nueva reserva: {detalle_reserva['cliente_nombre']} ({detalle_reserva['cliente_telefono']}) - {detalle_reserva['servicio_nombre']} el {fecha_hora_legible}"
         crear_notificacion_admin(cursor, conn, mensaje_notif, reserva_id=nueva_id)
 
     except Exception as e:
@@ -432,7 +409,6 @@ def crear_reserva():
     for extra in adicionales_detalle:
         extra["precio"] = float(extra["precio"])
         total_precio += extra["precio"]
-
     return jsonify({
         "mensaje": "Reserva creada correctamente",
         "reserva_id": nueva_id,
